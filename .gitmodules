@@ -1,0 +1,3 @@
+[submodule "Permutation-Equivariant-Seq2Seq"]
+	path = Permutation-Equivariant-Seq2Seq
+	url = https://github.com/facebookresearch/Permutation-Equivariant-Seq2Seq.git
