@@ -85,7 +85,8 @@ else:
     hidden_size = hyperparams['hidden_size']
     scan_equi = hyperparams['scan_equi']
     embed_dim = hyperparams['embed_dim']
-    batch_size = hyperparams['batch_size']
+    # batch_size = hyperparams['batch_size']
+    batch_size = 32
     seed = hyperparams['seed']
     learning_rate = 1e-3
     scan_split = args.best_hyperparams
@@ -110,7 +111,7 @@ dir_path = args.scan_dir
 data_gen = DataSet(dir_path, in_equivariances, out_equivariances, 
     args.dev_percent, scan_split)
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 G = make_group(args.group, len(data_gen.in_vocab), len(in_equivariances), device)
 
