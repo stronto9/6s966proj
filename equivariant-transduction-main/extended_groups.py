@@ -94,7 +94,7 @@ class SymmetricGroup(PermutationSubgroup):
 
     def __init__(self, n, p, device):
         super(SymmetricGroup, self).__init__(n, p, device)
-        self.perms = permutations(range(p))
+        self.matrices = []
         self.len = factorial(p)
 
         for perm in permutations(range(p)):
@@ -109,13 +109,7 @@ class SymmetricGroup(PermutationSubgroup):
         return self.len
     
     def get_element(self, i):
-        
-        out = torch.zeros((self.n, self.n), device=self.device)
-        for j, k in enumerate(self.perms[i]):
-            out[j, k] = 1
-        for j in range(self.p, self.n):
-            out[j, j] = 1
-        return out
+        return self.matrices[i]
     
     def get_inverse(self, i):
         return torch.pinverse(self.get_element(i))
@@ -125,9 +119,8 @@ class AlternatingGroup(PermutationSubgroup):
 
     def __init__(self, n, p, device):
         super(AlternatingGroup, self).__init__(n, p, device)
-        self.perms = []
+        self.matrices = []
         self.len = factorial(p)//2
-
 
         for perm in permutations(range(p)):
             pm = torch.zeros((n, n), device=self.device)
@@ -136,19 +129,13 @@ class AlternatingGroup(PermutationSubgroup):
             for j in range(p, n):
                 pm[j, j] = 1
             if torch.linalg.det(pm) == 1:
-                self.perms.append(perm)
-            del pm
+                self.matrices.append(pm)
 
     def __len__(self):
         return self.len
 
     def get_element(self, i):
-        out = torch.zeros((self.n, self.n), device=self.device)
-        for j, k in enumerate(self.perms[i]):
-            out[j, k] = 1
-        for j in range(self.p, self.n):
-            out[j, j] = 1
-        return out
+        return self.matrices[i]
     
     def get_inverse(self, i):
         return torch.pinverse(self.get_element(i))
