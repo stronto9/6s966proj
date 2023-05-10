@@ -2,6 +2,7 @@ import argparse
 import random
 import os
 import torch
+from tqdm import tqdm
 from dataset import DataSet
 from extended_groups import make_group
 from model import EquivariantHardAlignmentModel
@@ -130,7 +131,7 @@ for j in range(args.epochs):
     max_norm=0
     print("EPOCH", j)
     epoch_loss = 0
-    for i in range(batches):
+    for i in tqdm(range(batches)):
         x, y = data_gen.get_batch(batch_size)
         optimizer.zero_grad()
         p = model(x.to(device),y.to(device), T)
