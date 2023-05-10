@@ -112,7 +112,7 @@ class SymmetricGroup(PermutationSubgroup):
         return self.matrices[i].to(self.device)
     
     def get_inverse(self, i):
-        return torch.pinverse(self.get_element(i))
+        return self.get_element(i).transpose(0,1)
 
 
 class AlternatingGroup(PermutationSubgroup):
@@ -138,7 +138,7 @@ class AlternatingGroup(PermutationSubgroup):
         return self.matrices[i].to(self.device)
     
     def get_inverse(self, i):
-        return torch.pinverse(self.get_element(i))
+        return self.get_element(i).transpose(0,1)
 
 class DihedralGroup(PermutationSubgroup):
 

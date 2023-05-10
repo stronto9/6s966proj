@@ -64,7 +64,7 @@ class EquivariantVocab(object):
         return self.word2idx[word]
     
     def batch_tensor_to_sent(self, ten):
-        idx_arr = torch.nonzero(torch.abs(ten.squeeze(2)) >= 1e-6)
+        idx_arr = torch.nonzero(ten.squeeze(2))
         sent = idx_arr[:, 2]
         sent = sent.view(ten.shape[0], ten.shape[1])
         return sent
