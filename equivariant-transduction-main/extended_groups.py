@@ -142,6 +142,9 @@ class DihedralGroup(PermutationSubgroup):
         super().__init__(n, p, device)
         self.cache = [None for _ in range(2*p)]
     
+    def __len__(self):
+        return 2*self.p
+    
     def get_element(self, i):
         if self.cache[i] is not None:
             return self.cache[i]
