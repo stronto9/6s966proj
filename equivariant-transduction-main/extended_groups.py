@@ -120,6 +120,7 @@ class AlternatingGroup(PermutationSubgroup):
     def __init__(self, n, p, device):
         super(AlternatingGroup, self).__init__(n, p, device)
         self.matrices = []
+        self.len = factorial(p)//2
 
         for perm in permutations(range(p)):
             pm = torch.zeros((n, n), device=self.device)
@@ -129,7 +130,10 @@ class AlternatingGroup(PermutationSubgroup):
                 pm[j, j] = 1
             if torch.linalg.det(pm) == 1:
                 self.matrices.append(pm)
-    
+
+    def __len__(self):
+        return self.len
+
     def get_element(self, i):
         return self.matrices[i]
     
