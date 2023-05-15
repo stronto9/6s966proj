@@ -1,0 +1,9 @@
+--split
+add_jump
+--equivariance
+verb
+--use_attention
+--bidirectional
+--save_freq=25000
+--n_iters=25000
+--train_from_existing_path=models/add_jump/rnn_GLSTM_hidden_64_directions_2/model10/model_fully_trained.pt

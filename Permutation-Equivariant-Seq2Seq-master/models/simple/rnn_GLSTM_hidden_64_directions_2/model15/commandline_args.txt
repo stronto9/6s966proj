@@ -1,0 +1,7 @@
+--split
+simple
+--equivariance
+verb
+--use_attention
+--bidirectional
+--print_freq=5
