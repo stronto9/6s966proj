@@ -1,0 +1,8 @@
+--split
+add_jump
+--equivariance
+verb
+--use_attention
+--bidirectional
+--save_freq=100000
+--n_iters=400000
