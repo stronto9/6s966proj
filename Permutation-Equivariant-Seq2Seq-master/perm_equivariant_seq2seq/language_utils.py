@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 from perm_equivariant_seq2seq.symmetry_groups import LanguageInvariance
+import pprint
 
 
 class Language:
@@ -97,6 +98,12 @@ class EquivariantLanguage(Language):
     @property
     def num_other_words(self):
         return len([w for w in self.word2index if w not in self.equivariant_words])
+    
+    def __str__(self):
+        output = f"Fixed: {self.num_fixed_words}. Equivariant: {self.num_equivariant_words}. Other: {self.num_other_words}\n"
+        for i in self.word2index:
+            output += f"{i}: {self.word2index[i]}\n"
+        return output
 
 
 # Define SCAN language invariances
