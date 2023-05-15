@@ -1,0 +1,156 @@
+equivariant commands has structure: Fixed: 2. Equivariant: 4. Other: 9
+jump: 2
+look: 5
+opposite: 10
+right: 11
+thrice: 12
+and: 7
+walk: 4
+left: 9
+run: 3
+after: 6
+twice: 14
+turn: 13
+around: 8
+reached 25000 iterations
+	 has val_acc of 0.6717791557312012
+25000 iterations, is best so far
+reached 50000 iterations
+	 has val_acc of 0.7876619100570679
+50000 iterations, is best so far
+reached 75000 iterations
+	 has val_acc of 0.8633265495300293
+75000 iterations, is best so far
+reached 100000 iterations
+	 has val_acc of 0.9352419972419739
+100000 iterations, is best so far
+reached 125000 iterations
+	 has val_acc of 0.9461486339569092
+125000 iterations, is best so far
+reached 150000 iterations
+	 has val_acc of 0.944444477558136
+150000 iterations did worse than best so far
+reached 175000 iterations
+	 has val_acc of 0.9587594270706177
+175000 iterations, is best so far
+reached 200000 iterations
+	 has val_acc of 0.9768235087394714
+200000 iterations, is best so far
+equivariant commands has structure: Fixed: 2. Equivariant: 4. Other: 9
+jump: 2
+look: 5
+opposite: 10
+right: 11
+thrice: 12
+and: 7
+walk: 4
+left: 9
+run: 3
+after: 6
+twice: 14
+turn: 13
+around: 8
+reached 25000 iterations
+	 has val_acc of 0.956714391708374
+25000 iterations, is best so far
+reached 50000 iterations
+	 has val_acc of 0.9880709052085876
+50000 iterations, is best so far
+reached 75000 iterations
+	 has val_acc of 0.9853442907333374
+75000 iterations did worse than best so far
+reached 100000 iterations
+	 has val_acc of 0.9775051474571228
+100000 iterations did worse than best so far
+reached 125000 iterations
+	 has val_acc of 0.952965259552002
+125000 iterations did worse than best so far
+reached 150000 iterations
+	 has val_acc of 0.994205892086029
+150000 iterations, is best so far
+reached 175000 iterations
+	 has val_acc of 0.9911383986473083
+175000 iterations did worse than best so far
+reached 200000 iterations
+	 has val_acc of 0.9965917468070984
+200000 iterations, is best so far
+equivariant commands has structure: Fixed: 2. Equivariant: 4. Other: 9
+jump: 2
+look: 5
+opposite: 10
+right: 11
+thrice: 12
+and: 7
+walk: 4
+left: 9
+run: 3
+after: 6
+twice: 14
+turn: 13
+around: 8
+reached 25000 iterations
+	 has val_acc of 0.7767553329467773
+25000 iterations, is best so far
+reached 50000 iterations
+	 has val_acc of 0.8319700360298157
+50000 iterations, is best so far
+reached 75000 iterations
+	 has val_acc of 0.8953647017478943
+75000 iterations, is best so far
+reached 100000 iterations
+	 has val_acc of 0.912406325340271
+100000 iterations, is best so far
+reached 125000 iterations
+	 has val_acc of 0.9815950989723206
+125000 iterations, is best so far
+reached 150000 iterations
+	 has val_acc of 0.9955692291259766
+150000 iterations, is best so far
+reached 175000 iterations
+	 has val_acc of 0.9890934228897095
+175000 iterations did worse than best so far
+equivariant commands has structure: Fixed: 2. Equivariant: 4. Other: 9
+jump: 2
+look: 5
+opposite: 10
+right: 11
+thrice: 12
+and: 7
+walk: 4
+left: 9
+run: 3
+after: 6
+twice: 14
+turn: 13
+around: 8
+reached 25000 iterations
+	 has val_acc of 0.9836401343345642
+25000 iterations, is best so far
+equivariant commands has structure: Fixed: 2. Equivariant: 4. Other: 9
+jump: 2
+look: 5
+opposite: 10
+right: 11
+thrice: 12
+and: 7
+walk: 4
+left: 9
+run: 3
+after: 6
+twice: 14
+turn: 13
+around: 8
+equivariant commands has structure: Fixed: 2. Equivariant: 4. Other: 9
+jump: 2
+look: 5
+opposite: 10
+right: 11
+thrice: 12
+and: 7
+walk: 4
+left: 9
+run: 3
+after: 6
+twice: 14
+turn: 13
+around: 8
