@@ -1,4 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+from itertools import permutations
 import numpy as np
 import torch
 
@@ -21,7 +22,7 @@ class LanguageInvariance:
         return self.invariant_token if word in self.invariant_set else word
 
 
-def get_permutation_matrix(num_letters, permutations):
+def get_permutation_matrix(num_letters, permutations, det1 = False):
     """Construct a permutation matrix (NxN matrix with det(A)=1) that implements that desired permutations
 
     Args:
@@ -32,7 +33,7 @@ def get_permutation_matrix(num_letters, permutations):
     """
     perm_mat = np.zeros((num_letters, num_letters))
     for perm in permutations:
-        perm_mat[perm[1] - 1, perm[0] - 1] = 1.
+        perm_mat[perm[1], perm[0]] = 1.
     # Enforce that every row / column has at least one element = 1
     row_sums, columns_sums = perm_mat.sum(1), perm_mat.sum(0)
     for j in range(num_letters):
@@ -40,7 +41,13 @@ def get_permutation_matrix(num_letters, permutations):
             perm_mat[j, j] = 1.
         if columns_sums[j] == 0:
             perm_mat[j, j] = 1.
-    assert np.linalg.det(perm_mat) in [1., -1], "Determinant != -+1., please ensure valid permutations"
+    det = np.linalg.det(perm_mat)
+    assert det in [1., -1], "Determinant != -+1., please ensure valid permutations"
+    
+    # only returns matrix when det = 1
+    if det1:
+        if det == -1:
+            return None
     return torch.tensor(perm_mat).to(device)
 
 
@@ -79,6 +86,76 @@ class PermutationSymmetry:
         return False
 
 
+class FullPermutations(PermutationSymmetry):
+    """
+    """
+    
+    def __init__(self, num_letters, num_equivariant, first_equivariant=0):
+        super(FullPermutations, self).__init__(num_letters)
+        self.num_equivariant = num_equivariant
+        self.first_equivariant = first_equivariant
+        self.last_equivariant = first_equivariant + num_equivariant # assumes location?
+        
+        # enumerate through all of the permutations
+        for perm in permutations(range(self.num_equivariant)):
+            # identity already added in PermutationSymmetry init
+            if perm == tuple([_ for _ in range(self.num_equivariant)]):
+                continue
+                
+            perm_mat = get_permutation_matrix(self.num_letters, zip(range(self.num_equivariant), perm))
+            self.perm_matrices.append(perm_mat)
+
+        self.index2mat, self.index2inverse, self.index2inverse_indices = {}, {}, {}
+        for idx, mat in enumerate(self.perm_matrices):
+            self.index2mat[idx] = mat
+            self.index2inverse[idx] = mat.T
+            self.index2inverse_indices[idx] = torch.tensor(
+                [self.mat2index(mat.T @ h) for h in self.perm_matrices],
+                dtype=torch.long
+            ).to(device)
+        print("finished initializing")
+        
+class AlternatingPermutations(PermutationSymmetry): # out of date, debugging full permutation oom error
+    """
+    """
+    def __init__(self, num_letters, num_equivariant, first_equivariant=0):
+        super(AlternatingPermutations, self).__init__(num_letters)
+        self.num_equivariant = num_equivariant
+        self.first_equivariant = first_equivariant
+        self.last_equivariant = first_equivariant + num_equivariant
+
+        # enumerate through all of the permutations
+        printFirst = True
+        for perm in permutations(range(self.first_equivariant, self.last_equivariant)):
+            # identity already added in PermutationSymmetry init
+            if perm == tuple([_ for _ in range(self.first_equivariant, self.last_equivariant)]):
+                continue
+
+            perm_mat = get_permutation_matrix(self.num_letters, zip(range(self.first_equivariant, self.last_equivariant), perm), det1=True)
+            
+            if printFirst and perm_mat is not None:
+                print(f"num letters: {self.num_letters}")
+                print(f"num eq: {self.num_equivariant}")
+                print(f"first eq: {self.first_equivariant}")
+                print(f"example ap perm: {perm}")
+                print(f"the zipPER: {list(zip(range(self.first_equivariant, self.last_equivariant), perm))}")
+                print(f"example ap perm matrix even with the weird +1: {perm_mat}")
+                printFirst = False
+                
+            if perm_mat is not None:
+                self.perm_matrices.append(perm_mat)
+
+        print(f"{len(self.perm_matrices)} permutations")
+        self.index2mat, self.index2inverse, self.index2inverse_indices = {}, {}, {}
+        for idx, mat in enumerate(self.perm_matrices):
+            self.index2mat[idx] = mat
+            self.index2inverse[idx] = mat.T
+            self.index2inverse_indices[idx] = torch.tensor(
+                [self.mat2index(mat.T @ h) for h in self.perm_matrices],
+                dtype=torch.long
+            ).to(device)
+        print("finished initializing ap")
+
 class CircularShift(PermutationSymmetry):
     """Class to represent a circular shift for some number of letters (must be less than N)
 
@@ -92,24 +169,29 @@ class CircularShift(PermutationSymmetry):
         self.num_equivariant = num_equivariant
         self.first_equivariant = first_equivariant
         self.last_equivariant = first_equivariant + num_equivariant
+        print(f"in circular shift with {num_letters} num_letters and first equi = {self.first_equivariant}")
 
         # Define initial shift
         self.init_perm = [(i, i + 1) for i in range(self.first_equivariant, self.last_equivariant - 1)]
-        self.init_perm += [(self.last_equivariant - 1, self.first_equivariant)]
+        self.init_perm.append((self.last_equivariant - 1, self.first_equivariant))
+        print(f"initi perm: {self.init_perm}")
         self.tau1 = get_permutation_matrix(self.num_letters, self.init_perm)
+        print(f"tau1 matrix shape: {self.tau1.shape}")
         self.perm_matrices.append(self.tau1)
         for _ in range(self.num_equivariant - 2):
             perm_mat = self.perm_matrices[-1] @ self.tau1
             self.perm_matrices.append(perm_mat)
+        print(f"num perm matrices: {len(self.perm_matrices)}")
 
         self.index2mat, self.index2inverse, self.index2inverse_indices = {}, {}, {}
         for idx, mat in enumerate(self.perm_matrices):
             self.index2mat[idx] = mat
-            self.index2inverse[idx] = torch.pinverse(mat)
+            self.index2inverse[idx] = mat.T
             self.index2inverse_indices[idx] = torch.tensor(
-                [self.mat2index(torch.pinverse(mat) @ h) for h in self.perm_matrices],
+                [self.mat2index(mat.T @ h) for h in self.perm_matrices],
                 dtype=torch.long
             ).to(device)
+        print("finished initializing")
 
 
 class VerbDirectionSCAN(PermutationSymmetry):
@@ -134,9 +216,9 @@ class VerbDirectionSCAN(PermutationSymmetry):
         self.index2mat, self.index2inverse, self.index2inverse_indices = {}, {}, {}
         for idx, mat in enumerate(self.perm_matrices):
             self.index2mat[idx] = mat
-            self.index2inverse[idx] = torch.pinverse(mat)
+            self.index2inverse[idx] = mat.T
             self.index2inverse_indices[idx] = torch.tensor(
-                [self.mat2index(torch.pinverse(mat) @ h) for h in self.perm_matrices],
+                [self.mat2index(mat.T @ h) for h in self.perm_matrices],
                 dtype=torch.long
             ).to(device)
 
@@ -150,18 +232,33 @@ class TrivialGroup(PermutationSymmetry):
         self.index2mat, self.index2inverse, self.index2inverse_indices = {}, {}, {}
         for idx, mat in enumerate(self.perm_matrices):
             self.index2mat[idx] = mat
-            self.index2inverse[idx] = torch.pinverse(mat)
+            self.index2inverse[idx] = mat.T
             self.index2inverse_indices[idx] = torch.tensor(
-                [self.mat2index(torch.pinverse(mat) @ h) for h in self.perm_matrices],
+                [self.mat2index(mat.T @ h) for h in self.perm_matrices],
                 dtype=torch.long
             ).to(device)
 
 
-def get_permutation_equivariance(equi_lang):
+def get_permutation_equivariance(equi_lang, group):
     """Helper function to construct and return an equivariance group for a language"""
     if equi_lang.num_equivariant_words == 0:
         return TrivialGroup(num_letters=equi_lang.n_words)
+    print(f"in get perm equiv with n_words: {equi_lang.n_words}")
+    print(f"num fixed words: {equi_lang.num_fixed_words}")
+    print(f"num equiv words: {equi_lang.num_equivariant_words}")
+    print("done for get_perm_Equiv")
 
-    return CircularShift(num_letters=equi_lang.n_words,
-                         num_equivariant=equi_lang.num_equivariant_words,
-                         first_equivariant=equi_lang.num_fixed_words + 1)
+    if group == "alternating":
+        return AlternatingPermutations(num_letters=equi_lang.n_words,
+                             num_equivariant=equi_lang.num_equivariant_words,
+                             first_equivariant=equi_lang.num_fixed_words)
+
+    if group == "cyclic":
+        return CircularShift(num_letters=equi_lang.n_words,
+                             num_equivariant=equi_lang.num_equivariant_words,
+                             first_equivariant=equi_lang.num_fixed_words)
+    
+    if group == "full":
+        return FullPermutations(num_letters=equi_lang.n_words,
+                     num_equivariant=equi_lang.num_equivariant_words,
+                     first_equivariant=equi_lang.num_fixed_words)

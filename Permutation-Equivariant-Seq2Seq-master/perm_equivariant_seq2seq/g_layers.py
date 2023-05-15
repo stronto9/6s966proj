@@ -149,7 +149,7 @@ class GroupConv(nn.Module):
         self.bias = torch.nn.Parameter(1e-1 * torch.ones(self.embedding_size))
         self._init_parameters()
 
-    def forward(self, input):
+    def forward(self, inpt):
         """Forward pass through the layer
 
         Args:
@@ -157,9 +157,10 @@ class GroupConv(nn.Module):
         Returns:
             (torch.tensor) phi: G -> Rk', represented as a |G| x Rk' tensor  (batch_size x |G| x K)
         """
-        ipt = input[:, None, ..., None]                           # dim: batch x      1   x |G| (h) x  K  x 1
-        conv_filter = self.get_conv_filter()[None, ...]           # dim:   1   x  |G| (g) x |G| (h) x  K  x K
-        return (ipt * conv_filter).sum(2).sum(2) + self.bias
+        # ipt = input[:, None, ..., None]                           # dim: batch x      1   x |G| (h) x  K  x 1
+        # conv_filter = self.get_conv_filter()[None, ...]           # dim:   1   x  |G| (g) x |G| (h) x  K  x K
+        # return (ipt * conv_filter).sum(2).sum(2) + self.bias
+        return torch.einsum("bhk,ghkl->bgl", inpt, self.get_conv_filter()) + self.bias
 
     def get_conv_filter(self):
         return torch.stack([torch.index_select(self.weight, 0, self.symmetry_group.index2inverse_indices[g])

@@ -46,9 +46,15 @@ parser.add_argument('--bidirectional',
                     default=False, 
                     action='store_true',
                     help="Boolean to use bidirectional encoder.")
+parser.add_argument('--train_from_existing_path',
+                    dest='existing_model',
+                    help='Allows you to train from an existing model, provided the model path.')
 # Equivariance options:
 parser.add_argument('--equivariance', 
                     choices=['verb', 'direction', 'verb+direction', 'none'])
+parser.add_argument('--group',
+                    choices=['cyclic', 'alternating', 'full'],
+                    default='cyclic')
 # Optimization and training hyper-parameters
 parser.add_argument('--split', 
                     choices=[None, 'simple', 'add_jump', 
@@ -161,6 +167,7 @@ def train(batch,
             _, decoder_output_symbol = decoder_output.topk(1)
             if decoder_output_symbol.item() == EOS_token:
                 break
+        # del model_output
         loss += sentence_loss / (di + 1)
 
     loss /= batch_size
@@ -210,6 +217,7 @@ def test_accuracy(model_to_test, pairs):
             input_tensor, output_tensor = pair
             model_output = model_to_test(input_tensor=input_tensor)
             accuracies.append(sentence_correct(output_tensor, model_output))
+            # del model_output
     return torch.stack(accuracies).type(torch.float).mean()
 
 
@@ -231,6 +239,12 @@ if __name__ == '__main__':
         get_equivariant_scan_languages(pairs=train_pairs,
                                        input_equivariances=in_equivariances,
                                        output_equivariances=out_equivariances)
+    print(f"equiv commands num fixed words is hard-coded to be 2. num equiv words: {equivariant_commands.num_equivariant_words} and num other words: {equivariant_commands.num_other_words}")
+    print(f"equiv commands vocab: {str(equivariant_commands)}")
+    print(f"equiv actions num fixed words is hard-coded to be 2. num equiv words: {equivariant_actions.num_equivariant_words} and num other words: {equivariant_actions.num_other_words}")
+    print(str(equivariant_commands))
+    with open('train.txt', 'a') as f:
+        f.write(f"equivariant commands has structure: {str(equivariant_commands)}")
     if args.equivariance == 'verb+direction':
         from perm_equivariant_seq2seq.symmetry_groups import VerbDirectionSCAN
         input_symmetry_group = VerbDirectionSCAN(
@@ -242,8 +256,8 @@ if __name__ == '__main__':
             first_equivariant=equivariant_actions.num_fixed_words + 1
         )
     else:
-        input_symmetry_group = get_permutation_equivariance(equivariant_commands)
-        output_symmetry_group = get_permutation_equivariance(equivariant_actions)
+        input_symmetry_group = get_permutation_equivariance(equivariant_commands, args.group)
+        output_symmetry_group = get_permutation_equivariance(equivariant_actions, args.group)
 
     # Initialize model
     model = EquiSeq2Seq(input_symmetry_group=input_symmetry_group,
@@ -256,6 +270,14 @@ if __name__ == '__main__':
                         use_attention=args.use_attention,
                         bidirectional=args.bidirectional)
     model.to(device)
+                    
+    # Load previously trained parameters if they exist
+    if args.existing_model is not None:
+        print("in args.existing_model")
+        state_dict = torch.load(args.existing_model)
+        model.load_state_dict(state_dict)
+        print("successfully loaded existing model")
+                    
     # Initialize optimizers
     encoder_optimizer = torch.optim.Adam(model.encoder.parameters(),
                                          lr=args.learning_rate,
@@ -300,7 +322,6 @@ if __name__ == '__main__':
                      dec_optimizer=decoder_optimizer,
                      loss_fn=criterion,
                      teacher_forcing_ratio=args.teacher_forcing_ratio)
-
         print_loss_total += loss
         plot_loss_total += loss
 
@@ -314,11 +335,21 @@ if __name__ == '__main__':
             # save model if is better
             if args.validation_size > 0.:
                 val_acc = test_accuracy(model, validation_pairs).item()
+                with open('train.txt', 'a') as f:
+                    f.write(f"reached {iteration+1} iterations\n")
+                    f.write(f"\t has val_acc of {val_acc}\n")
                 if val_acc > best_acc:
                     best_acc = val_acc
-                    save_path = os.path.join(model_path, 'best_validation.pt')
+                    save_path = os.path.join(model_path, f'{iteration+1}_best_validation.pt')
                     print('Best validation accuracy at iteration %s: %s' % (iteration + 1, val_acc))
                     torch.save(model.state_dict(), save_path)
+                    with open('train.txt', 'a') as f:
+                        f.write(f"{iteration+1} iterations, is best so far\n")
+                else:
+                    save_path = os.path.join(model_path, f'{iteration+1}_model.pt')
+                    torch.save(model.state_dict(), save_path)
+                    with open('train.txt', 'a') as f:
+                        f.write(f"{iteration+1} iterations did worse than best so far\n")
 
     # Save fully trained model
     save_path = os.path.join(model_path, 'model_fully_trained.pt')

@@ -57,6 +57,13 @@ parser.add_argument('--print_param_nums',
                     default=False, 
                     action='store_true',
                     help="Print the number of model parameters")
+parser.add_argument('--intermediate', 
+                    type=int, 
+                    default=0, 
+                    help='Which intermediate model you want to evaluate')
+parser.add_argument('--group',
+                    choices=['cyclic', 'alternating', 'full'],
+                    default='cyclic')
 args = parser.parse_args()
 # Model options
 parser.add_argument('--hidden_size', 
@@ -77,6 +84,9 @@ parser.add_argument('--bidirectional',
                     default=False, 
                     action='store_true',
                     help="Boolean to use bidirectional encoder.")
+parser.add_argument('--train_from_existing_path',
+                    dest='existing_model',
+                    help='Allows you to train from an existing model, provided the model path.')
 # Equivariance options:
 parser.add_argument('--equivariance', 
                     choices=['verb', 'direction', 'verb+direction', 'none'])
@@ -193,10 +203,18 @@ if __name__ == '__main__':
     # Make sure all data is contained in the directory and load arguments
     args_path = os.path.join(args.experiment_dir, "commandline_args.txt")
     if args.best_validation:
+        with open('results.txt', 'a') as f:
+            f.write("ACCURACIES FOR BEST_VALIDATION\n")
         model_path = os.path.join(args.experiment_dir, "best_validation.pt")
     elif args.fully_trained:
+        with open('results.txt', 'a') as f:
+            f.write("ACCURACIES FOR FULLY_TRAINED\n")
         model_path = os.path.join(args.experiment_dir, 
                                   "model_fully_trained.pt")
+    elif args.intermediate:
+        with open('results.txt', 'a') as f:
+            f.write(f"ACCURACIES FOR {args.intermediate}_BEST_VALIDATION\n")
+        model_path = os.path.join(args.experiment_dir, f"{args.intermediate}_best_validation.pt") # TODO: sometimes saved as just {iter}_model
     else:
         model_path = os.path.join(args.experiment_dir, 
                                   "model_iteration%s.pt" % args.iterations)
@@ -236,8 +254,8 @@ if __name__ == '__main__':
             first_equivariant=equivariant_actions.num_fixed_words + 1
         )
     else:
-        input_symmetry_group = get_permutation_equivariance(equivariant_commands)
-        output_symmetry_group = get_permutation_equivariance(equivariant_actions)
+        input_symmetry_group = get_permutation_equivariance(equivariant_commands, args.group)
+        output_symmetry_group = get_permutation_equivariance(equivariant_actions, args.group)
 
     # Initialize model
     model = EquiSeq2Seq(input_symmetry_group=input_symmetry_group,
@@ -264,11 +282,17 @@ if __name__ == '__main__':
     if args.compute_train_accuracy:
         train_acc = test_accuracy(model, training_eval)
         print("Model train accuracy: %s" % train_acc.item())
+        with open('results.txt', 'a') as f:
+            f.write(f"Model train accuracy: {train_acc.item()}\n")
     if args.compute_test_accuracy:
         test_acc = test_accuracy(model, testing_pairs)
         print("Model test accuracy: %s" % test_acc.item())
+        with open('results.txt', 'a') as f:
+            f.write(f"Model test accuracy: {test_acc.item()}\n")
     if args.print_param_nums:
         print("Model contains %s params" % model.num_params)
+        with open('results.txt', 'a') as f:
+            f.write(f"Model contains {model.num_params} params\n")
     for i in range(args.print_translations):
         pair = random.choice(test_pairs)
         print('>', pair[0])
@@ -278,3 +302,8 @@ if __name__ == '__main__':
         output_sentence = ' '.join(output_words)
         print('<', output_sentence)
         print('')
+        with open('results.txt', 'a') as f:
+            f.write("Model pair example: \n")
+            f.write(f"> {pair[0]}\n")
+            f.write(f"= {pair[1]}\n")
+            f.write(f"< {output_sentence}\n")
